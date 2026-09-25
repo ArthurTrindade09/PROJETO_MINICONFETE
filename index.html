@@ -3,181 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft 3D Puro CSS</title>
+    <title>Jogo da Memória: Rick e Morty Cursed Edition</title>
     <style>
-        /* Configurações Globais e Reset */
-        body, html {
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #74b9ff; /* Cor do céu */
-            font-family: sans-serif;
         }
 
-        /* Instruções de Uso */
-        .ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            text-shadow: 2px 2px 0px #000;
-            z-index: 100;
-            pointer-events: none;
-        }
-        .ui h1 { margin: 0 0 5px 0; font-size: 24px; }
-        .ui p { margin: 0; font-size: 14px; }
-
-        /* Cenário de Visualização 3D */
-        .viewport {
-            width: 100%;
-            height: 100%;
-            perspective: 800px;
+        body {
+            background-color: #0f172a;
+            color: #00ff88;
+            font-family: 'Courier New', Courier, monospace;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
         }
 
-        /* Sistema de Rotação de Câmera com Passagem de Mouse */
-        .camera-trigger {
-            position: absolute;
-            width: 25%;
+        h1 {
+            text-align: center;
+            text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: #38bdf8;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Tabuleiro do Jogo */
+        .memory-game {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 12px;
+            perspective: 1000px;
+        }
+
+        /* Estrutura da Carta */
+        .memory-card {
+            aspect-ratio: 3 / 4;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: scale(1);
+            transition: transform 0.5s;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .memory-card:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+
+        /* Efeito de virar a carta */
+        .memory-card.flip {
+            transform: rotateY(180deg);
+        }
+
+        /* Faces das Cartas */
+        .front-face, .back-face {
+            width: 100%;
             height: 100%;
+            position: absolute;
+            border-radius: 8px;
+            backface-visibility: hidden;
+            border: 2px solid #334155;
+        }
+
+        /* Frente (Imagem Duvidosa) */
+        .front-face {
+            transform: rotateY(180deg);
+            background-color: #000;
+            object-fit: cover;
+            border-color: #00ff88;
+        }
+
+        /* Verso (Portal do Rick) */
+        .back-face {
+            background: radial-gradient(circle, #a3e635 10%, #15803d 80%, #052e16 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            border-color: #a3e635;
+            user-select: none;
+        }
+
+        .back-face::after {
+            content: "🌀";
+            animation: spin 6s infinite linear;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Tela de Vitória */
+        .win-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(15, 23, 42, 0.95);
+            border: 4px solid #00ff88;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 0 30px #00ff88;
             z-index: 10;
         }
-        .trigger-left  { left: 0; }
-        .trigger-right { right: 0; }
 
-        /* Mundo 3D */
-        .world {
-            position: relative;
-            width: 0;
-            height: 0;
-            transform-style: preserve-3d;
-            transform: rotateX(-25px) rotateY(-45deg);
-            transition: transform 0.5s ease;
-        }
-
-        /* Movimentação da câmera baseada nos gatilhos laterais */
-        .trigger-left:hover ~ .world { transform: rotateX(-25deg) rotateY(-90deg); }
-        .trigger-right:hover ~ .world { transform: rotateX(-25deg) rotateY(0deg); }
-
-        /* Estrutura Base do Bloco */
-        .block {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            transform-style: preserve-3d;
-        }
-
-        /* Esconder o checkbox que gerencia a quebra do bloco */
-        .block input[type="checkbox"] {
-            display: none;
-        }
-
-        /* Sumir com o bloco quando ele for clicado (marcado) */
-        .block input[type="checkbox"]:checked ~ .face {
-            display: none;
-        }
-
-        /* Faces do Cubo */
-        .face {
-            position: absolute;
-            width: 100px;
-            height: 100px;
+        .win-message button {
+            background-color: #00ff88;
+            color: #0f172a;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 15px;
             cursor: pointer;
-            box-sizing: border-box;
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            image-rendering: pixelated; /* Mantém o aspecto de pixel art */
+            border-radius: 5px;
         }
 
-        /* Posicionamento 3D das Faces */
-        .front  { transform: translateZ(50px); }
-        .back   { transform: rotateY(180deg) translateZ(50px); }
-        .left   { transform: rotateY(-90deg) translateZ(50px); }
-        .right  { transform: rotateY(90deg) translateZ(50px); }
-        .top    { transform: rotateX(90deg) translateZ(50px); }
-        .bottom { transform: rotateX(-90deg) translateZ(50px); }
-
-        /* Texturas Estilo Bloco de Grama (Minecraft) */
-        .grass .front, .grass .back, .grass .left, .grass .right {
-            background: linear-gradient(to bottom, #5fbd3e 20%, #866043 20%);
+        .win-message button:hover {
+            background-color: #38bdf8;
         }
-        .grass .top { background-color: #5fbd3e; }
-        .grass .bottom { background-color: #866043; }
-
-        /* Coordenadas de posicionamento dos blocos no grid (X, Y, Z) */
-        /* Linha 1 */
-        .b1 { transform: translate3d(-100px, 0, -100px); }
-        .b2 { transform: translate3d(0px, 0, -100px); }
-        .b3 { transform: translate3d(100px, 0, -100px); }
-        /* Linha 2 */
-        .b4 { transform: translate3d(-100px, 0, 0px); }
-        .b5 { transform: translate3d(0px, -50px, 0px); } /* Bloco levemente mais alto */
-        .b6 { transform: translate3d(100px, 0, 0px); }
-        /* Linha 3 */
-        .b7 { transform: translate3d(-100px, 0, 100px); }
-        .b8 { transform: translate3d(0px, 0, 100px); }
-        .b9 { transform: translate3d(100px, 0, 100px); }
     </style>
 </head>
 <body>
 
-    <div class="ui">
-        <h1>Minecraft 3D (CSS Puro)</h1>
-        <p>🖱️ Clique em um bloco para "quebrá-lo".</p>
-        <p>🔄 Passe o mouse nas extremidades esquerda/direita da tela para girar a câmera.</p>
+    <h1>RICK AND MORTY</h1>
+    <p>CURSED IMAGES EDITION</p>
+
+    <div class="memory-game">
+        <!-- As 12 cartas serão geradas dinamicamente via JS abaixo para manter o código limpo -->
     </div>
 
-    <div class="viewport">
-        <!-- Gatilhos invisíveis de detecção do mouse para girar o cenário -->
-        <div class="camera-trigger trigger-left"></div>
-        <div class="camera-trigger trigger-right"></div>
-
-        <!-- O Mundo Onde os Blocos Estão -->
-        <div class="world">
-            
-            <!-- Macro estrutura de repetição de blocos baseada em IDs -->
-            <!-- Bloco 1 -->
-            <div class="block grass b1">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 2 -->
-            <div class="block grass b2">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 3 -->
-            <div class="block grass b3">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 4 -->
-            <div class="block grass b4">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 5 (Central) -->
-            <div class="block grass b5">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 6 -->
-            <div class="block grass b6">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 7 -->
-            <div class="block grass b7">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 8 -->
-            <div class="block grass b8">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-            <!-- Bloco 9 -->
-            <div class="block grass b9">
-                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
-            </div>
-
-        </div>
+    <div class="win-message" id="winMessage">
+        <h2>WUBBA LUBBA DUB DUB!</h2>
+        <p>Você sobreviveu às piores imagens do multiverso.</p>
+        <button onclick="resetGame()">Jogar de Novo</button>
     </div>
 
+    <script>
+        // Links diretos para as imagens mais "duvidosas" e amaldiçoadas encontradas na internet
+        const cursedImages = [
+            { name: 'rick-peter', url: 'https://squarespace-cdn.com' }, // Rick Realista Bizarro
+            { name: 'morty-rorty', url: 'https://redd.it' }, // Morty Esticado/Distorcido
+            { name: 'cosplay-medo', url: 'https://redd.it' }, // Modelos 3D realistas perturbadores
+            { name: 'meatcanyon', url: 'https://pinimg.com' }, // Versão estilo MeatCanyon (bizarra)
+            { name: 'peter-griffin-rick', url: 'https://pinimg.com' }, // Fusão Rick Sanchez + Peter Griffin
+            { name: 'sans-rick', url: 'https://kindpng.com' } // Rick misturado com o Sans de Undertale
+        ];
+
+        // Duplica os itens para criar os pares do jogo
+        const cardsData = [...cursedImages, ...cursedImages];
+        const gameContainer = document.querySelector('.memory-game');
+        
+        let hasFlippedCard = false;
+        let lockBoard = false;
+        let firstCard, secondCard;
+        let matchedPairs = 0;
+
+        // Renderiza as cartas na tela
+        function createBoard() {
+            // Embaralha as cartas usando algoritmo Fisher-Yates
+            cardsData.sort(() => 0.5 - Math.random());
+
+            gameContainer.innerHTML = '';
+            cardsData.forEach(item => {
+                const card = document.createElement('div');
+                card.classList.add('memory-card');
+                card.dataset.framework = item.name;
+
+                card.innerHTML = `
+                    <img class="front-face" src="${item.url}" alt="${item.name}">
+                    <div class="back-face"></div>
+                `;
+
+                card.addEventListener('click', flipCard);
+                gameContainer.appendChild(card);
+            });
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            this.classList.add('flip');
+
+            if (!hasFlippedCard) {
+                // Primeiro clique
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+
+            // Segundo clique
+            secondCard = this;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.framework === secondCard.dataset.framework;
+            isMatch ? disableCards() : unflipCards();
+        }
+
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            matchedPairs++;
+
+            if (matchedPairs === cursedImages.length) {
+                setTimeout(() => {
+                    document.getElementById('winMessage').style.display = 'block';
+                }, 500);
+            }
+
+            resetBoard();
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+
+            setTimeout(() => {
+                firstCard.classList.remove('flip');
+                secondCard.classList.remove('flip');
+                resetBoard();
+            }, 1200); // Dá um tempo para o jogador processar a imagem assustadora
+        }
+
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        function resetGame() {
+            document.getElementById('winMessage').style.style.display = 'none';
+            matchedPairs = 0;
+            resetBoard();
+            createBoard();
+        }
+
+        // Inicia o jogo automaticamente ao carregar
+        createBoard();
+    </script>
 </body>
 </html>
