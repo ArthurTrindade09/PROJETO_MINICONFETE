@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft 3D Puro CSS</title>
+    <style>
+        /* Configurações Globais e Reset */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #74b9ff; /* Cor do céu */
+            font-family: sans-serif;
+        }
+
+        /* Instruções de Uso */
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-shadow: 2px 2px 0px #000;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .ui h1 { margin: 0 0 5px 0; font-size: 24px; }
+        .ui p { margin: 0; font-size: 14px; }
+
+        /* Cenário de Visualização 3D */
+        .viewport {
+            width: 100%;
+            height: 100%;
+            perspective: 800px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Sistema de Rotação de Câmera com Passagem de Mouse */
+        .camera-trigger {
+            position: absolute;
+            width: 25%;
+            height: 100%;
+            z-index: 10;
+        }
+        .trigger-left  { left: 0; }
+        .trigger-right { right: 0; }
+
+        /* Mundo 3D */
+        .world {
+            position: relative;
+            width: 0;
+            height: 0;
+            transform-style: preserve-3d;
+            transform: rotateX(-25px) rotateY(-45deg);
+            transition: transform 0.5s ease;
+        }
+
+        /* Movimentação da câmera baseada nos gatilhos laterais */
+        .trigger-left:hover ~ .world { transform: rotateX(-25deg) rotateY(-90deg); }
+        .trigger-right:hover ~ .world { transform: rotateX(-25deg) rotateY(0deg); }
+
+        /* Estrutura Base do Bloco */
+        .block {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            transform-style: preserve-3d;
+        }
+
+        /* Esconder o checkbox que gerencia a quebra do bloco */
+        .block input[type="checkbox"] {
+            display: none;
+        }
+
+        /* Sumir com o bloco quando ele for clicado (marcado) */
+        .block input[type="checkbox"]:checked ~ .face {
+            display: none;
+        }
+
+        /* Faces do Cubo */
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            cursor: pointer;
+            box-sizing: border-box;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            image-rendering: pixelated; /* Mantém o aspecto de pixel art */
+        }
+
+        /* Posicionamento 3D das Faces */
+        .front  { transform: translateZ(50px); }
+        .back   { transform: rotateY(180deg) translateZ(50px); }
+        .left   { transform: rotateY(-90deg) translateZ(50px); }
+        .right  { transform: rotateY(90deg) translateZ(50px); }
+        .top    { transform: rotateX(90deg) translateZ(50px); }
+        .bottom { transform: rotateX(-90deg) translateZ(50px); }
+
+        /* Texturas Estilo Bloco de Grama (Minecraft) */
+        .grass .front, .grass .back, .grass .left, .grass .right {
+            background: linear-gradient(to bottom, #5fbd3e 20%, #866043 20%);
+        }
+        .grass .top { background-color: #5fbd3e; }
+        .grass .bottom { background-color: #866043; }
+
+        /* Coordenadas de posicionamento dos blocos no grid (X, Y, Z) */
+        /* Linha 1 */
+        .b1 { transform: translate3d(-100px, 0, -100px); }
+        .b2 { transform: translate3d(0px, 0, -100px); }
+        .b3 { transform: translate3d(100px, 0, -100px); }
+        /* Linha 2 */
+        .b4 { transform: translate3d(-100px, 0, 0px); }
+        .b5 { transform: translate3d(0px, -50px, 0px); } /* Bloco levemente mais alto */
+        .b6 { transform: translate3d(100px, 0, 0px); }
+        /* Linha 3 */
+        .b7 { transform: translate3d(-100px, 0, 100px); }
+        .b8 { transform: translate3d(0px, 0, 100px); }
+        .b9 { transform: translate3d(100px, 0, 100px); }
+    </style>
+</head>
+<body>
+
+    <div class="ui">
+        <h1>Minecraft 3D (CSS Puro)</h1>
+        <p>🖱️ Clique em um bloco para "quebrá-lo".</p>
+        <p>🔄 Passe o mouse nas extremidades esquerda/direita da tela para girar a câmera.</p>
+    </div>
+
+    <div class="viewport">
+        <!-- Gatilhos invisíveis de detecção do mouse para girar o cenário -->
+        <div class="camera-trigger trigger-left"></div>
+        <div class="camera-trigger trigger-right"></div>
+
+        <!-- O Mundo Onde os Blocos Estão -->
+        <div class="world">
+            
+            <!-- Macro estrutura de repetição de blocos baseada em IDs -->
+            <!-- Bloco 1 -->
+            <div class="block grass b1">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 2 -->
+            <div class="block grass b2">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 3 -->
+            <div class="block grass b3">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 4 -->
+            <div class="block grass b4">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 5 (Central) -->
+            <div class="block grass b5">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 6 -->
+            <div class="block grass b6">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 7 -->
+            <div class="block grass b7">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 8 -->
+            <div class="block grass b8">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+            <!-- Bloco 9 -->
+            <div class="block grass b9">
+                <label><input type="checkbox"><div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div></label>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
